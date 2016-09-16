@@ -1,8 +1,5 @@
 package com.example.bemi.beanr;
 
-/**
- * Created by jimmy on 2/10/16.
- */
 public class Business {
     public String name;
     public String address;

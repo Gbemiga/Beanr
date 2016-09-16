@@ -8,7 +8,6 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -16,13 +15,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 import android.support.v7.widget.Toolbar;
-
-import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -38,17 +31,11 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.apache.http.params.HttpParams;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -57,10 +44,6 @@ import java.util.concurrent.ExecutionException;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    private GoogleMap mMap;
-    private LocationManager locationManager;
-    private String showUrl = "http://www.brewr.net/showbusiness.php";
-    RequestQueue requestQueue;
     ArrayList<Business> businessArray = new ArrayList<Business>();
     Toolbar toolbar;
     DrawerLayout drawerLayout;
@@ -80,33 +63,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         System.out.println("Got here");
-
-//        requestQueue = Volley.newRequestQueue(getApplicationContext());
-//        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST,
-//                showUrl, new Response.Listener<JSONObject>() {
-//            @Override
-//            public void onResponse(JSONObject response) {
-//                try {
-//                    JSONArray businesses = response.getJSONArray("Businesses");
-//                    for(int i = 0; i<businesses.length(); i++){
-//                        JSONObject business = businesses.getJSONObject(i);
-//                        Business business1 = new Business(business.getString("name"),business.getString("address"),Double.parseDouble(business.getString("latitude")),Double.parseDouble(business.getString("longitude")));
-//                        System.out.println(business.getString("name"));
-//                        businessArray.add(business1);
-//                        System.out.println(businessArray.size());
-//                    }
-//                } catch (JSONException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }, new Response.ErrorListener() {
-//            @Override
-//            public void onErrorResponse(VolleyError error) {
-//
-//            }
-//        });
-//        requestQueue.add(jsonObjectRequest);
-//        System.out.println(businessArray.size());
     }
 
 
@@ -129,21 +85,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-        /*mMap = googleMap;
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                new LatLng(41.889, -87.622), 16));
-       // mMap.addMarker(new MarkerOptions().position(new LatLng(0,0)).title("Marker in Sydney"));
 
-        if (locationManager != null) {
-            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                    || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            }
-        }
-        googleMap.addMarker(new MarkerOptions()
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.bean_icon))
-                .anchor(0.0f, 1.0f) // Anchors the marker on the bottom left
-                .position(new LatLng(41.889, -87.622)));*/
-       map.setMyLocationEnabled(true);
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
         if (locationManager != null) {
@@ -158,7 +100,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (location != null){
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(
                    new LatLng(location.getLatitude(), location.getLongitude()), 16));
-           // map.setMyLocationEnabled(true);
+            map.setMyLocationEnabled(true);
 
         }
 

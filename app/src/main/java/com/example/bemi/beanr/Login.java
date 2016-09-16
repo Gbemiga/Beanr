@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -12,15 +11,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-
-import com.android.volley.AuthFailureError;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
@@ -34,16 +24,12 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class Login extends AppCompatActivity {
@@ -95,7 +81,6 @@ public class Login extends AppCompatActivity {
                             Toast.makeText(Login.this, "Fields cannot be empty", Toast.LENGTH_LONG).show();
                        }
 
-//                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST,
 
                     if(exists) {
                         Intent mainIntent = new Intent(Login.this, MapsActivity.class);
@@ -113,8 +98,7 @@ public class Login extends AppCompatActivity {
         // declare other objects as per your need
         @Override
         protected void onPreExecute() {
-            //Toast.makeText(MapsActivity.this, "This may take a while...", Toast.LENGTH_LONG).show();
-        };
+        }
 
         @Override
         protected Void doInBackground(Void... params) {
@@ -133,9 +117,7 @@ public class Login extends AppCompatActivity {
 
 
                 HttpParams para = new BasicHttpParams();
-                //this how tiny it might seems, is actually absoluty needed. otherwise http client lags for 2sec.
                 HttpProtocolParams.setVersion(para, HttpVersion.HTTP_1_1);
-                //HttpClient httpClient = new DefaultHttpClient(params);
                 HttpClient httpclient = new DefaultHttpClient();
                 HttpPost httppost = new HttpPost(
                         url);
@@ -178,8 +160,6 @@ public class Login extends AppCompatActivity {
                         userArray.add(user1);
                         System.out.println(userArray.size());
                         exists = true;
-                        // System.out.println(userArray.get(i).toString());
-                        // System.out.println("Before Post name is : " + userArray.get(0).getUsername());
                     }
                 }
 
@@ -192,7 +172,6 @@ public class Login extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Void rsult) {
-//            System.out.println(userArray.get(0).getUsername());
             if(result.equals("less than 0{\"users\":[]}")) {
                 Toast.makeText(Login.this, "Incorrect Username or Password.", Toast.LENGTH_LONG).show();
             }else

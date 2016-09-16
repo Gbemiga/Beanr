@@ -1,8 +1,5 @@
 package com.example.bemi.beanr;
 
-/**
- * Created by jimmy on 2/10/16.
- */
 public class User {
     public String username;
     public String email;
