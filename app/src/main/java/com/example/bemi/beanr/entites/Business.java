@@ -1,4 +1,4 @@
-package com.example.bemi.beanr;
+package com.example.bemi.beanr.entites;
 
 public class Business {
     public String name;

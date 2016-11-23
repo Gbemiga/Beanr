@@ -1,52 +1,44 @@
 package com.example.bemi.beanr;
 
+import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
-import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.Volley;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpVersion;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
+import android.widget.Toast;
 
-public class Register extends AppCompatActivity {
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class Register extends Activity {
 
     EditText username,email, password, confirm_password;
     Button signUp;
-    RequestQueue requestQueue;
     RadioButton male, female;
     String emailtxt, usernametxt, passwordtxt;
-    String result = "";
+    String uri = "http://172.20.10.9:8080/restful-services/api/createCustomer/";
     String gendertxt = "M";
-    String insertUrl = "http://www.brewr.net/insert_user.php";
+    JSONObject cred;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
         username = (EditText) findViewById(R.id.username);
         email = (EditText) findViewById(R.id.email);
@@ -55,64 +47,6 @@ public class Register extends AppCompatActivity {
         male = (RadioButton) findViewById(R.id.male_radioButton);
         female = (RadioButton) findViewById(R.id.female_radioButton);
         signUp = (Button) findViewById(R.id.reg_button);
-
-
-        requestQueue = Volley.newRequestQueue(getApplicationContext());
-        signUp.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (email.getText().toString().trim().isEmpty()) {
-                    email.setError("Cannot be empty");
-                }
-                if (username.getText().toString().trim().isEmpty()) {
-                    username.setError("Cannot be empty");
-                }
-                if (password.getText().toString().trim().isEmpty()) {
-                    password.setError("Cannot be empty");
-                }
-                if (confirm_password.getText().toString().trim().isEmpty()) {
-                    confirm_password.setError("Cannot be empty");
-                }
-
-                if (!email.getText().toString().trim().isEmpty() &&
-                        !username.getText().toString().trim().isEmpty() &&
-                        !password.getText().toString().trim().isEmpty() && !confirm_password.getText().toString().trim().isEmpty() ){
-                    usernametxt = username.getText().toString();
-                    emailtxt = email.getText().toString();
-                    passwordtxt = password.getText().toString();
-
-                    RegUser ru = new RegUser();
-//                    StringRequest request = new StringRequest(Request.Method.POST, insertUrl, new Response.Listener<String>() {
-//                        @Override
-//                        public void onResponse(String response) {
-//
-//
-//                        }
-//                    }, new Response.ErrorListener() {
-//                        @Override
-//                        public void onErrorResponse(VolleyError error) {
-//
-//                        }
-//                    }) {
-//
-//                        @Override
-//                        protected Map<String, String> getParams() throws AuthFailureError {
-//                            Map<String, String> parameters = new HashMap<String, String>();
-//                            parameters.put("email", email.getText().toString());
-//                            parameters.put("username", username.getText().toString());
-//                            parameters.put("password", password.getText().toString());
-//                            parameters.put("gender", gender);
-//                            System.out.println(parameters);
-//                            return parameters;
-//                        }
-//                    };
-//                    requestQueue.add(request);
-//                    Intent mainIntent = new Intent(Register.this,MapsActivity.class);
-//                    Register.this.startActivity(mainIntent);
-                }
-            }
-
-        });
 
         confirm_password.addTextChangedListener(new TextWatcher() {
             @Override
@@ -130,7 +64,8 @@ public class Register extends AppCompatActivity {
                 }
             }
 
-            public void afterTextChanged(Editable editable) {
+            @Override
+            public void afterTextChanged(Editable s) {
                 if (confirm_password.getText().toString().trim().isEmpty()) {
                     confirm_password.setError("Cannot be empty");
                 } else if (!confirm_password.getText().toString().equals(password.getText().toString())) {
@@ -139,93 +74,133 @@ public class Register extends AppCompatActivity {
                     confirm_password.setError(null);
                 }
             }
+
+        });
+
+        signUp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (email.getText().toString().trim().isEmpty()) {
+                    email.setError("Cannot be empty");
+                }
+                if(isValidEmail(email.getText().toString().trim())==false) {
+                    email.setError("Enter valid email");
+                }
+                if (username.getText().toString().trim().isEmpty()) {
+                    username.setError("Cannot be empty");
+                }
+                if (password.getText().toString().trim().isEmpty()) {
+                    password.setError("Cannot be empty");
+                }
+                if (confirm_password.getText().toString().trim().isEmpty()) {
+                    confirm_password.setError("Cannot be empty");
+                }
+                if(!confirm_password.getText().toString().trim().equals(password.getText().toString().trim())){
+                    confirm_password.setError("Password must match");
+                }
+
+                if (!email.getText().toString().trim().isEmpty() &&
+                        !username.getText().toString().trim().isEmpty() &&
+                        !password.getText().toString().trim().isEmpty() &&
+                        !confirm_password.getText().toString().trim().isEmpty() &&
+                        confirm_password.getText().toString().trim().equals(password.getText().toString().trim()) &&
+                        isValidEmail(email.getText().toString().trim()) != false) {
+                    usernametxt = username.getText().toString();
+                    emailtxt = email.getText().toString();
+                    passwordtxt = password.getText().toString();
+
+                    cred = new JSONObject();
+                    try {
+                        cred.put("username",username.getText().toString().trim());
+                        cred.put("password", password.getText().toString().trim());
+                        cred.put("email", email.getText().toString().trim());
+                        cred.put("gender", gendertxt);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    new RegUser().execute();
+                    try {
+                        //to allow the other Thread to set the value
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         });
     }
-    public class RegUser extends AsyncTask<Void, Void, Void> {
+
+    public final static boolean isValidEmail(CharSequence target) {
+        return !TextUtils.isEmpty(target) && android.util.Patterns.EMAIL_ADDRESS.matcher(target).matches();
+    }
+
+    class RegUser extends AsyncTask{
 
         // declare other objects as per your need
         @Override
         protected void onPreExecute() {
-            //Toast.makeText(MapsActivity.this, "This may take a while...", Toast.LENGTH_LONG).show();
-        };
+            Toast.makeText(Register.this, "Signing you up, please wait...", Toast.LENGTH_LONG).show();
+        }
 
         @Override
-        protected Void doInBackground(Void... params) {
-
-            String url = "http://www.brewr.net/insert_user.php";
-            String line = "";
-            InputStream is = null;
-            System.out.println("Got into Asynccc");
-            ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-            nameValuePairs.add(new BasicNameValuePair("username", usernametxt));
-            nameValuePairs.add(new BasicNameValuePair("email", emailtxt));
-            nameValuePairs.add(new BasicNameValuePair("password", passwordtxt));
-            nameValuePairs.add(new BasicNameValuePair("gender", gendertxt));
-
-
-			/*Connects to server*/
+        protected String doInBackground(Object... params) {
             try {
+                // 1. URL
+                URL url = new URL(uri);
 
+                // 2. Open connection
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-                HttpParams para = new BasicHttpParams();
-                //this how tiny it might seems, is actually absoluty needed. otherwise http client lags for 2sec.
-                HttpProtocolParams.setVersion(para, HttpVersion.HTTP_1_1);
-                //HttpClient httpClient = new DefaultHttpClient(params);
-                HttpClient httpclient = new DefaultHttpClient();
-                HttpPost httppost = new HttpPost(
-                        url);
-                httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                // 3. Specify POST method
+                conn.setRequestMethod("POST");
 
-                HttpResponse response = httpclient.execute(httppost);
-                HttpEntity entity = response.getEntity();
-                is = entity.getContent();
-                Log.e("pass 1", "Connection success ");
+                // 4. Set the headers
+                conn.setRequestProperty("Content-Type", "application/json");
 
-            } catch (Exception e) {
-                Log.e("Fail 1", e.toString());
-            }
+                conn.setDoOutput(true);
 
-			/*Reads the results. */
-            try {
-                BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(is, "iso-8859-1"), 8);
-                StringBuilder sb = new StringBuilder();
-                while ((line = reader.readLine()) != null) {
-                    sb.append(line);
+                // 5. Add JSON data into POST request body
+
+                //`5.1 Use Jackson object mapper to convert Contnet object into JSON
+                ObjectMapper mapper = new ObjectMapper();
+
+                // 5.2 Get connection output stream
+                DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
+
+                // 5.3 Copy Content "JSON" into
+                wr.writeBytes(cred.toString());
+
+                // 5.4 Send the request
+                wr.flush();
+
+                // 5.5 close
+                wr.close();
+
+                // 6. Get the response
+                int responseCode = conn.getResponseCode();
+                System.out.println("\nSending 'POST' request to URL : " + url);
+                System.out.println("Response Code : " + responseCode);
+
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream()));
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
                 }
-                is.close();
-                result = sb.toString();
+                in.close();
 
-                Log.e("pass 2", "Result: " + result);
-            } catch (Exception e) {
-                Log.e("Fail 2", e.toString());
-            }
+                // 7. Print result
+                System.out.println(response.toString());
 
-			/*Convert string to JSON*/
-            try {
-                if(result.equals("Success")) {
-
-
-                }
-
-            } catch (Exception e) {
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            return null;
+            return "";
         }
-
-        @Override
-        protected void onPostExecute(Void rsult) {
-//            System.out.println(userArray.get(0).getUsername());
-            if(result.equals("Failure")) {
-               // Toast.makeText(Login.this, "Incorrect Username or Password.", Toast.LENGTH_LONG).show();
-            }else
-            {
-              //  Toast.makeText(Login.this, "Welcome "+userArray.get(0).getUsername(), Toast.LENGTH_LONG).show();
-            }
-        }
-
     }
-
 }
