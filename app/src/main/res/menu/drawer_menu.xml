@@ -4,12 +4,24 @@
         android:checkableBehavior="single">
         <item android:id="@+id/home_id"
             android:title="Home"
-            android:icon="@drawable/home"></item>
+            android:icon="@drawable/home"/>
         <item android:id="@+id/profile_id"
             android:title="Profile"
-            android:icon="@drawable/profile"></item>
+            android:icon="@drawable/profile"/>
         <item android:id="@+id/setting_id"
             android:title="Settings"
-            android:icon="@drawable/settings"></item>
+            android:icon="@drawable/settings"/>
+        <item android:id="@+id/setting_id2"
+            android:title="Settings"
+            android:icon="@drawable/settings"/>
+        <item android:id="@+id/setting_id3"
+            android:title="Settings"
+            android:icon="@drawable/settings"/>
+        <item android:id="@+id/setting_id4"
+            android:title="Settings"
+            android:icon="@drawable/settings"/>
+        <item android:id="@+id/setting_id5"
+            android:title="Settings"
+            android:icon="@drawable/settings"/>
     </group>
 </menu>

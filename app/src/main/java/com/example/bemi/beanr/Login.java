@@ -11,35 +11,39 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpVersion;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
+
+import com.example.bemi.beanr.dbHandler.MyDBHandler;
+import com.example.bemi.beanr.entites.Customer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Serializable;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
 public class Login extends AppCompatActivity {
     EditText username, password;
     Button login;
+    JSONObject cred;
     String name = "" ;
     String pass = "" ;
     String result = "";
     boolean exists = false;
-    ArrayList<User> userArray = new ArrayList<User>();
+    String uri = "http://172.20.10.9:8080/restful-services/api/getCustomer/";
+    ArrayList<Customer> customersArrayList = new ArrayList<Customer>();
+    MyDBHandler myDBHandler;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,20 +51,11 @@ public class Login extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        myDBHandler = new MyDBHandler(this, null, null ,1);
 
         login = (Button) findViewById(R.id.login_button);
         username = (EditText) findViewById(R.id.username);
         password = (EditText) findViewById(R.id.password);
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent mainIntent = new Intent(Login.this, Register.class);
-                Login.this.startActivity(mainIntent);
-            }
-        });
-
 
             login.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -81,10 +76,11 @@ public class Login extends AppCompatActivity {
                             Toast.makeText(Login.this, "Fields cannot be empty", Toast.LENGTH_LONG).show();
                        }
 
-
                     if(exists) {
-                        Intent mainIntent = new Intent(Login.this, MapsActivity.class);
-                        Login.this.startActivity(mainIntent);
+                        myDBHandler.deleteAllCustomer();
+                        myDBHandler.addCustomer(customersArrayList.get(0));
+                        Intent mainIntent = new Intent(Login.this, MainActivity.class);
+                        startActivity(mainIntent);
                         finish();
                     }
                 }
@@ -93,7 +89,10 @@ public class Login extends AppCompatActivity {
     }
 
 
-    public class GetUser extends AsyncTask<Void, Void, Void> {
+    class GetUser extends AsyncTask<String, String, String>{
+
+
+
 
         // declare other objects as per your need
         @Override
@@ -101,84 +100,106 @@ public class Login extends AppCompatActivity {
         }
 
         @Override
-        protected Void doInBackground(Void... params) {
-
-            String url = "http://www.brewr.net/showUser.php";
-            String line = "";
-            InputStream is = null;
-            System.out.println("Got into Asynccc");
-            ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-            nameValuePairs.add(new BasicNameValuePair("username", name));
-            nameValuePairs.add(new BasicNameValuePair("password", pass));
-
-
-			/*Connects to server*/
+        protected String doInBackground(String... params) {
             try {
 
-
-                HttpParams para = new BasicHttpParams();
-                HttpProtocolParams.setVersion(para, HttpVersion.HTTP_1_1);
-                HttpClient httpclient = new DefaultHttpClient();
-                HttpPost httppost = new HttpPost(
-                        url);
-                httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-                HttpResponse response = httpclient.execute(httppost);
-                HttpEntity entity = response.getEntity();
-                is = entity.getContent();
-                Log.e("pass 1", "Connection success ");
-
-            } catch (Exception e) {
-                Log.e("Fail 1", e.toString());
-            }
-
-			/*Reads the results. */
-            try {
-                BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(is, "iso-8859-1"), 8);
-                StringBuilder sb = new StringBuilder();
-                while ((line = reader.readLine()) != null) {
-                    sb.append(line);
+                cred = new JSONObject();
+                try {
+                    cred.put("username",name);
+                    cred.put("password", pass);
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
-                is.close();
-                result = sb.toString();
+                // 1. URL
+                URL url = new URL(uri);
 
-                Log.e("pass 2", "Result: " + result);
-            } catch (Exception e) {
-                Log.e("Fail 2", e.toString());
-            }
+                // 2. Open connection
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-			/*Convert string to JSON*/
-            try {
-                if(!result.equals("less than 0{\"users\":[]}")) {
-                    JSONObject obj = new JSONObject(result);
-                    JSONArray users = obj.getJSONArray("users");
-                    for (int i = 0; i < users.length(); i++) {
-                        JSONObject user = users.getJSONObject(i);
-                        User user1 = new User(user.getString("username"), user.getString("email"), user.getString("password"), user.getString("gender"));
-                        System.out.println(user.getString("username"));
-                        userArray.add(user1);
-                        System.out.println(userArray.size());
-                        exists = true;
+                // 3. Specify POST method
+                conn.setRequestMethod("POST");
+
+                // 4. Set the headers
+                conn.setRequestProperty("Content-Type", "application/json");
+
+                conn.setDoOutput(true);
+
+                // 5. Add JSON data into POST request body
+
+                //`5.1 Use Jackson object mapper to convert Contnet object into JSON
+                ObjectMapper mapper = new ObjectMapper();
+
+                // 5.2 Get connection output stream
+                DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
+
+                // 5.3 Copy Content "JSON" into
+                wr.writeBytes(cred.toString());
+
+                // 5.4 Send the request
+                wr.flush();
+
+                // 5.5 close
+                wr.close();
+
+                // 6. Get the response
+                int responseCode = conn.getResponseCode();
+                System.out.println("\nSending 'POST' request to URL : " + url);
+                System.out.println("Response Code : " + responseCode);
+
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream()));
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+
+                // 7. Print result
+                System.out.println(response.toString());
+                result = response.toString();
+
+                if(!result.equals("[]")) {
+                    exists = true;
+                    JSONArray json = new JSONArray(result);
+                    for (int i = 0; i < json.length(); i++) {
+                        JSONObject e = json.getJSONObject(i);
+                        JSONObject object = e.getJSONObject("customer");
+                        Customer customer = new Customer();
+                        customer.setEmail(object.getString("email"));
+                        customer.setGender(object.getString("gender"));
+                        customer.setUsername(object.getString("username"));
+                        customersArrayList.add(customer);
                     }
+                    System.out.println("THIS IS THE ARRAY LIST" + customersArrayList.toString());
                 }
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-            return null;
+            return result;
         }
 
         @Override
-        protected void onPostExecute(Void rsult) {
-            if(result.equals("less than 0{\"users\":[]}")) {
+        protected void onPostExecute(String result) {
+            if(result.equals("[]")) {
                 Toast.makeText(Login.this, "Incorrect Username or Password.", Toast.LENGTH_LONG).show();
             }else
             {
-                Toast.makeText(Login.this, "Welcome "+userArray.get(0).getUsername(), Toast.LENGTH_LONG).show();
+                Toast.makeText(Login.this, "Welcome "+ customersArrayList.get(0).getUsername(), Toast.LENGTH_LONG).show();
             }
         }
 
     }
+
+    @Override
+    public void onBackPressed() {
+        Intent i = new Intent(getApplicationContext(),SignLoginActivity.class);
+        startActivity(i);
+        finish();
+        return;
+    }
+
 }
+
