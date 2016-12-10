@@ -5,6 +5,8 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -14,29 +16,28 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.InflateException;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.RatingBar;
+import android.widget.TextView;
 import android.widget.Toast;
-import android.support.v7.widget.Toolbar;
 import com.example.bemi.beanr.entites.Business;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
 import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.MapView;
-import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.GoogleMap.InfoWindowAdapter;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.squareup.picasso.Picasso;
+import android.widget.RatingBar.OnRatingBarChangeListener;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -52,13 +53,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
-public class MapsActivity extends Fragment implements OnMapReadyCallback {
+public class MapsActivity extends Fragment implements OnMapReadyCallback, OnInfoWindowClickListener {
 
     ArrayList<Business> businessArray = new ArrayList<Business>();
     String uri = "http://172.20.10.9:8080/restful-services/api/getAllBusinesses/";
-    private LocationListener listener;
+    LocationListener listener;
     GoogleMap mMap;
-    MapView mMapView;
+    RatingBar ratingBar;
 
     @Nullable
     @Override
@@ -72,29 +73,40 @@ public class MapsActivity extends Fragment implements OnMapReadyCallback {
 
         MapFragment fragment = (MapFragment)getChildFragmentManager().findFragmentById(R.id.map);
         fragment.getMapAsync(this);
+
     }
 
-
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
-    public void onMapReady(GoogleMap map) {
-//
+    public void onMapReady(final GoogleMap map) {
         mMap = map;
-//
-//        // Add a marker in Sydney and move the camera
-//        LatLng sydney = new LatLng(-34, 151);
-//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-//        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-//    }
+
+        if(mMap != null){
+            mMap.setInfoWindowAdapter(new InfoWindowAdapter() {
+                                          @Override
+                                          public View getInfoWindow(Marker marker) {
+                                              return null;
+                                          }
+
+                                          @Override
+                                          public View getInfoContents(final Marker marker) {
+                                              View v = View.inflate(getActivity().getApplicationContext(),R.layout.map_location_info, null);
+
+                                              ImageView imageView = (ImageView) v.findViewById(R.id.storePic);
+                                              TextView storeName = (TextView) v.findViewById(R.id.storeName);
+                                              TextView storeAddress = (TextView) v.findViewById(R.id.storeAddress);
+                                              ratingBar = (RatingBar) v.findViewById(R.id.ratingBar);
+
+                                              storeName.setText(marker.getTitle().toString());
+                                              storeAddress.setText(marker.getSnippet().toString());
+                                              Picasso.with(getActivity()).load("https://maps.googleapis.com/maps/api/streetview?size=300x300&location="+marker.getPosition().latitude+",%20"+marker.getPosition().longitude+"&heading=151.78&pitch=-0.76&key=AIzaSyAwJtk1tfy9a6Bx3JygLldC2y8yO0K0Qfo").into(imageView);
+
+                                              return v;
+                                          }
+                                      }
+            );
+            mMap.setOnInfoWindowClickListener(this);
+        }
+
         GetBusinesses gb = new GetBusinesses();
         try {
             gb.execute().get();
@@ -121,12 +133,12 @@ public class MapsActivity extends Fragment implements OnMapReadyCallback {
             mMap.setMyLocationEnabled(true);
         }
 
-            mMap.setMyLocationEnabled(true);
+        mMap.setMyLocationEnabled(true);
         listener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                    new LatLng(location.getLatitude(), location.getLongitude()), 16));
+                        new LatLng(location.getLatitude(), location.getLongitude()), 16));
             }
 
             @Override
@@ -141,30 +153,41 @@ public class MapsActivity extends Fragment implements OnMapReadyCallback {
 
             @Override
             public void onProviderDisabled(String s) {
-
                 Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                 startActivity(i);
             }
         };
 
-//        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-//        double longitude = location.getLongitude();
-//        double latitude = location.getLatitude();
-//        map.setMyLocationEnabled(true);
-//        map.moveCamera(CameraUpdateFactory.newLatLngZoom(
-//                    new LatLng(latitude, longitude), 16));
-
-                // You can customize the marker image using images bundled with
-        // your app, or dynamically generated bitmaps.
         for(Business b: businessArray){
             mMap.addMarker(new MarkerOptions()
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.bean_icon))
                     .anchor(0.0f, 1.0f) // Anchors the marker on the bottom left
                     .title(b.getName())
+                    .snippet(b.getAddress())
                     .position(new LatLng(b.getLatitude(), b.getLongitude())));
         }
+
+
     }
 
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        Bundle bundle = new Bundle();
+        for(Business b: businessArray){
+            if(marker.getTitle().equals(b.getName())){
+                bundle.putSerializable("business", b);
+            }
+        }
+
+        if(bundle!=null) {
+            BusinessFragment nextFrag = new BusinessFragment();
+            nextFrag.setArguments(bundle);
+            getFragmentManager().beginTransaction()
+                    .replace(R.id.content_frame, nextFrag, null)
+                    .addToBackStack(null)
+                    .commit();
+        }
+    }
     public class GetBusinesses extends AsyncTask<Void, Void, String> {
 
         // declare other objects as per your need
@@ -176,7 +199,6 @@ public class MapsActivity extends Fragment implements OnMapReadyCallback {
         @Override
         protected String doInBackground(Void... params) {
             String result = "";
-            System.out.println("Got into Asynccc");
             StringBuffer string = new StringBuffer("");
             URL url = null;
             try {
@@ -198,7 +220,6 @@ public class MapsActivity extends Fragment implements OnMapReadyCallback {
 
             // read the response
             try {
-                System.out.println("Response Code: " + conn.getResponseCode());
                 InputStream in = new BufferedInputStream(conn.getInputStream());
 
                 BufferedReader rd = new BufferedReader(new InputStreamReader(in));
@@ -209,7 +230,6 @@ public class MapsActivity extends Fragment implements OnMapReadyCallback {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            System.out.println("RESPONSE JSON: "+string.toString());
             result = string.toString();
 			/*Convert string to JSON*/
             try {
@@ -218,10 +238,16 @@ public class MapsActivity extends Fragment implements OnMapReadyCallback {
                 for (int i = 0; i < json.length(); i++) {
                     JSONObject e = json.getJSONObject(i);
                     JSONObject business = e.getJSONObject("business");
-                    Business business1 = new Business(business.getString("name"), business.getString("address"), Double.parseDouble(business.getString("latitude")), Double.parseDouble(business.getString("longitude")));
-                    System.out.println(business.getString("name"));
+                    String email = "No email address available";
+                    String website = "Website unavailable";
+                    if(business.has("email")){
+                        email = business.getString("email");
+                    }
+                    if(business.has("website")){
+                        website = business.getString("website");
+                    }
+                    Business business1 = new Business(business.getString("name"), business.getString("address"), Double.parseDouble(business.getString("latitude")), Double.parseDouble(business.getString("longitude")), email,website);
                     businessArray.add(business1);
-                    System.out.println(businessArray.size());
                 }
 
             } catch (Exception e) {
@@ -238,10 +264,4 @@ public class MapsActivity extends Fragment implements OnMapReadyCallback {
         }
 
     }
-
-//    @Override
-//    protected void onPostCreate(Bundle savedInstanceState) {
-//        super.onPostCreate(savedInstanceState);
-//        actionBarDrawerToggle.syncState();
-//    }
 }

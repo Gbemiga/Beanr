@@ -44,6 +44,7 @@ public class Login extends AppCompatActivity {
     ArrayList<Customer> customersArrayList = new ArrayList<Customer>();
     MyDBHandler myDBHandler;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,26 +53,9 @@ public class Login extends AppCompatActivity {
         setSupportActionBar(toolbar);
         myDBHandler = new MyDBHandler(this, null, null ,1);
 
-        if(myDBHandler.getCustomer().getEmail() != null) {
-            Toast.makeText(Login.this, "Welcome "+ myDBHandler.getCustomer().getUsername(), Toast.LENGTH_LONG).show();
-            Intent mainIntent = new Intent(Login.this, MainActivity.class);
-            startActivity(mainIntent);
-            finish();
-        }
-
         login = (Button) findViewById(R.id.login_button);
         username = (EditText) findViewById(R.id.username);
         password = (EditText) findViewById(R.id.password);
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent mainIntent = new Intent(Login.this, Register.class);
-                Login.this.startActivity(mainIntent);
-            }
-        });
-
 
             login.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -91,7 +75,6 @@ public class Login extends AppCompatActivity {
                        } else {
                             Toast.makeText(Login.this, "Fields cannot be empty", Toast.LENGTH_LONG).show();
                        }
-
 
                     if(exists) {
                         myDBHandler.deleteAllCustomer();
@@ -209,5 +192,14 @@ public class Login extends AppCompatActivity {
         }
 
     }
+
+    @Override
+    public void onBackPressed() {
+        Intent i = new Intent(getApplicationContext(),SignLoginActivity.class);
+        startActivity(i);
+        finish();
+        return;
+    }
+
 }
 

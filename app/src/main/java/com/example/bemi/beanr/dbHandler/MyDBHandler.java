@@ -6,7 +6,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import com.example.bemi.beanr.entites.Business;
 import com.example.bemi.beanr.entites.Customer;
+import com.example.bemi.beanr.entites.FavouriteShop;
 
 import java.sql.SQLOutput;
 import java.util.ArrayList;
@@ -20,6 +22,8 @@ public class MyDBHandler extends SQLiteOpenHelper {
     public static final String COLUMN_USERNAME = "username";
     public static final String COLUMN_EMAIL = "email";
     public static final String COLUMN_GENDER = "gender";
+    public static final String TABLE_NAME2 = "favouriteShop";
+    public static final String COLUMN_BUSINESS_NAME = "businessName";
 
     //We need to pass database information along to superclass
     public MyDBHandler(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
@@ -34,7 +38,13 @@ public class MyDBHandler extends SQLiteOpenHelper {
                 COLUMN_EMAIL + " TEXT, " +
                 COLUMN_GENDER + " TEXT " +
                 ");";
+        String query2 = "CREATE TABLE " + TABLE_NAME2 + "(" +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_USERNAME + " TEXT," +
+                COLUMN_BUSINESS_NAME + " TEXT "+
+                ");";
         db.execSQL(query);
+        db.execSQL(query2);
     }
 
     @Override
@@ -54,12 +64,27 @@ public class MyDBHandler extends SQLiteOpenHelper {
         db.close();
     }
 
+    public void addFavouriteShop(Customer customer, Business business){
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_USERNAME, customer.getUsername());
+        values.put(COLUMN_BUSINESS_NAME, business.getName());
+        System.out.println(business.getName()+"IN MY HANDLER");
+        SQLiteDatabase db = getWritableDatabase();
+        db.insert(TABLE_NAME2, null, values);
+        db.close();
+    }
+
 
 
     //Delete a user from the database
     public void deleteCustomer(String username) {
         SQLiteDatabase db = getWritableDatabase();
         db.execSQL("DELETE FROM " + TABLE_NAME + " WHERE " + COLUMN_USERNAME + "=\"" + username + "\";");
+    }
+
+    public void deleteAllFavourite() {
+        SQLiteDatabase db = getWritableDatabase();
+        db.execSQL("DELETE FROM " + TABLE_NAME2 + ";");
     }
 
     public void deleteAllCustomer() {
@@ -98,6 +123,39 @@ public class MyDBHandler extends SQLiteOpenHelper {
         }
         db.close();
         return customer;
+    }
+
+    public ArrayList<FavouriteShop> getFavouriteShops(){
+        ArrayList<FavouriteShop>  favouriteShops = new ArrayList<>();
+        String dbString = "";
+        SQLiteDatabase db = getWritableDatabase();
+        // String query = "SELECT * FROM " + TABLE_NAME + " WHERE 1";
+        String query = "SELECT * FROM " + TABLE_NAME2;
+        //Cursor points to a location in your results
+        Cursor c = db.rawQuery(query, null);
+        //Move to the first row in your results
+        c.moveToFirst();
+//        FavouriteShop favouriteShop = new FavouriteShop();
+        //Position after the last row means the end of the results
+        while (!c.isAfterLast()) {
+            FavouriteShop favouriteShop = new FavouriteShop();
+            if (c.getString(c.getColumnIndex("username")) != null) {
+                dbString = c.getString(c.getColumnIndex("username"));
+
+                favouriteShop.setCustomerName(dbString);
+            }
+            if (c.getString(c.getColumnIndex("businessName")) != null) {
+                dbString = c.getString(c.getColumnIndex("businessName"));
+                System.out.println(dbString+"Trying to Gettttttt");
+                favouriteShop.setBusinessName(dbString);
+            }
+            favouriteShops.add(favouriteShop);
+            c.moveToNext();
+            System.out.println(c.getCount() + "CURSORRR");
+        }
+        db.close();
+        System.out.println(favouriteShops.toString()+ "END ");
+        return favouriteShops;
     }
 
 }

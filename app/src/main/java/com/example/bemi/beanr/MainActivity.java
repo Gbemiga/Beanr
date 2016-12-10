@@ -17,8 +17,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.bemi.beanr.dbHandler.MyDBHandler;
+import com.example.bemi.beanr.entites.FavouriteShop;
 
- public class MainActivity extends AppCompatActivity
+public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     MyDBHandler myDBHandler;
@@ -73,16 +74,20 @@ import com.example.bemi.beanr.dbHandler.MyDBHandler;
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem item= menu.findItem(R.id.action_settings);
+        item.setVisible(false);
+        super.onPrepareOptionsMenu(menu);
+        return true;
+    }
+
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -99,9 +104,7 @@ import com.example.bemi.beanr.dbHandler.MyDBHandler;
         } else if (id == R.id.nav_gallery) {
             fragmentClass = ProfileFragment.class;
         } else if (id == R.id.nav_favourite) {
-
-        } else if (id == R.id.nav_setting) {
-
+            fragmentClass = FavouriteFragment.class;
         } else if (id == R.id.nav_logout) {
             Toast.makeText(this, "Goodbye "+ myDBHandler.getCustomer().getUsername(), Toast.LENGTH_LONG).show();
             myDBHandler.deleteAllCustomer();

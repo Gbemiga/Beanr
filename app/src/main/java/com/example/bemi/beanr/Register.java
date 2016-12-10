@@ -1,6 +1,7 @@
 package com.example.bemi.beanr;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
@@ -12,6 +13,7 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.Toast;
 
+import com.example.bemi.beanr.dbHandler.MyDBHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -29,23 +31,23 @@ public class Register extends Activity {
 
     EditText username,email, password, confirm_password;
     Button signUp;
-    RadioButton male, female;
     String emailtxt, usernametxt, passwordtxt;
     String uri = "http://172.20.10.9:8080/restful-services/api/createCustomer/";
     String gendertxt = "M";
     JSONObject cred;
+    String result = "";
+    MyDBHandler myDBHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+        myDBHandler = new MyDBHandler(this, null, null ,1);
 
         username = (EditText) findViewById(R.id.username);
         email = (EditText) findViewById(R.id.email);
         password = (EditText) findViewById(R.id.password);
         confirm_password = (EditText) findViewById(R.id.confirmpassword);
-        male = (RadioButton) findViewById(R.id.male_radioButton);
-        female = (RadioButton) findViewById(R.id.female_radioButton);
         signUp = (Button) findViewById(R.id.reg_button);
 
         confirm_password.addTextChangedListener(new TextWatcher() {
@@ -135,7 +137,7 @@ public class Register extends Activity {
         return !TextUtils.isEmpty(target) && android.util.Patterns.EMAIL_ADDRESS.matcher(target).matches();
     }
 
-    class RegUser extends AsyncTask{
+    class RegUser extends AsyncTask<String, String, String>{
 
         // declare other objects as per your need
         @Override
@@ -144,7 +146,7 @@ public class Register extends Activity {
         }
 
         @Override
-        protected String doInBackground(Object... params) {
+        protected String doInBackground(String... params) {
             try {
                 // 1. URL
                 URL url = new URL(uri);
@@ -194,13 +196,21 @@ public class Register extends Activity {
 
                 // 7. Print result
                 System.out.println(response.toString());
+                result = response.toString();
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return "";
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            Toast.makeText(getApplicationContext(), "Please Login", Toast.LENGTH_LONG).show();
+            Intent i = new Intent(getApplicationContext(), Login.class);
+            startActivity(i);
         }
     }
 }
